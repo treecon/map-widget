@@ -108,7 +108,7 @@ class MapWidget {
 
         const bboxArrs = geoserverLayers
             .filter(x => this.#getNamesOfActiveLayers().length ? this.#getNamesOfActiveLayers().includes(x.Name) : this.#getNamesOfLayers().includes(x.Name))
-            .map(x => x.BoundingBox.find(y => y.crs === 'EPSG:4326').extent);
+            .map(x => x.BoundingBox.some(y => y.crs === 'EPSG:4326') ? x.BoundingBox.find(y => y.crs === 'EPSG:4326').extent : [200, 200, -200, -200]);
 
         const bbox = bboxArrs.reduce((s, c) => {
             return [
@@ -118,7 +118,6 @@ class MapWidget {
                 c[3] > s[3] ? c[3] : s[3],
             ];
         }, initialBBoxCoords);
-        console.log(bbox);
 
         this.#map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
     }
