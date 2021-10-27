@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map Widget</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+        integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
+        crossorigin=""/>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"
+        integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA=="
+        crossorigin=""></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/wms-capabilities@0.5.1/dist/wms-capabilities.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/gh/treecon/map-widget@1.0.2/map-widget.js"></script>
+</head>
+<body>
+    <div id="map_widget" style="height: 400px; width: 90vw;"></div>
+
+<script>
+    new MapWidget(
+        'map_widget',
+        'https://ahocevar.com/geoserver/wms', 
+        [
+            { layers: 'topp:states', label: 'States', openByDefault: true },
+            { layers: 'usa:states', label: 'Population', openByDefault: false },
+        ], 
+        {
+            zoomControl: true,
+            layerAliases: [
+                { name: 'states', alias: 'States' },
+                { name: 'states', alias: 'Population' },
+            ],
+        },
+    ).init()
+</script>
+</body>
+</html>
