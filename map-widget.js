@@ -90,6 +90,7 @@ class MapWidget {
             X: x,
             Y: y,
             INFO_FORMAT: 'application/json',
+            BUFFER: 0,
         };
 
         const queryString = Object.keys(requestParams).map((x, i) => `${x}=${Object.values(requestParams)[i]}`).join('&');
