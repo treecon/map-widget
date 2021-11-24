@@ -245,10 +245,10 @@ class MapWidget {
 
         this.#popup.setContent(popupContent);
 
-        if (document.querySelector(`#${this.#mapContainerId} .popup__prev_page`)) document.querySelector('#map_widget .popup__prev_page').onclick = () => {
+        if (document.querySelector(`#${this.#mapContainerId} .popup__prev_page`)) document.querySelector(`#${this.#mapContainerId} .popup__prev_page`).onclick = () => {
             this.#goToPage('prev');
         }
-        if (document.querySelector(`#${this.#mapContainerId} .popup__next_page`)) document.querySelector('#map_widget .popup__next_page').onclick = () => {
+        if (document.querySelector(`#${this.#mapContainerId} .popup__next_page`)) document.querySelector(`#${this.#mapContainerId} .popup__next_page`).onclick = () => {
             this.#goToPage('next');
         }
     }
