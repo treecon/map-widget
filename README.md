@@ -54,6 +54,8 @@ Type: `{ layers: string, label: string, openByDefault?: boolean }[]`
 
 <b>zoomControl</b>: `boolean` - whether to show a zoom control or not (default: `false`)
 
+<b>zoomControlPosition</b>: `string` - Required only if `zoomControl` is `true`. Accepts values: `TOP_LEFT`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_RIGHT`
+
 <b>initialViewType</b>: `string` - Accepts values:
 - `FITS_CONTENT` (default): Initial view will fit to visible layers. If no layer is visible by default, view will fit to the extent of all layers.
 - `CENTER_POINT`: Initial view is set to the given point and zoom level (`initialViewPoint`).
@@ -71,3 +73,12 @@ Type: `{ layers: string, label: string, openByDefault?: boolean }[]`
 <b>excludeProperties</b>: `string[]` - An array of properties to be excluded from feature information
 
 <b>includeOnlyProperties</b>: `{ property: string, label: string }[]` - An array of properties (and their labels) to be exclusively included in feature information
+
+<b>header</b>: Either `null` (default) or an object with following properties:
+- <b>logoImageUrl</b>: `string` (required),
+- <b>title</b>: `string` (required),
+- <b>backgroundColor</b>: `string` (accepts only RGB format, default: `rgb(248, 249, 250)`),
+- <b>textColor</b>: `string` (title text color, default: `#121212`),
+- <b>height</b>: `number` (height of header in px, default: `54`),
+- <b>logoOverflow</b>: `boolean` (if logo should overflow header, default: `false`),
+- <b>logoImageHeight</b>: `number` (ignored if `logoOverflow: false`, default: `80`),

@@ -2,6 +2,7 @@ class MapWidget {
 
     #mapOptionsDefault = {
         zoomControl: false,
+        zoomControlPosition: 'TOP_LEFT', // ignored if zoomControl: false, accepted values: 'TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'
         initialViewType: 'FITS_CONTENT', // accepted values: 'CENTER_POINT', 'FITS_CONTENT',
         initialViewPoint: {
             lat: 38,
@@ -13,7 +14,18 @@ class MapWidget {
         detectUrl: true,
         excludeProperties: null,
         includeOnlyProperties: null,
+        header: null,
     };
+
+    #headerOptionsDefault = {
+        logoImageUrl: '',
+        title: '',
+        backgroundColor: 'rgb(248, 249, 250)', // RGB format required
+        textColor: '#121212',
+        height: 54,
+        logoOverflow: false,
+        logoImageHeight: 80, // ignored if logoOverflow: false
+    }
 
     #mapContainerId;
 
@@ -34,12 +46,21 @@ class MapWidget {
     #currentPopupPage;
 
     constructor(mapContainerId, geoserverBaseUrl, wmsLayers, mapOptions) {
-        if (!mapContainerId || !geoserverBaseUrl || !wmsLayers || !wmsLayers.length) throw new Error('Insufficient arguments');
+        this.#validateArgs(mapContainerId, geoserverBaseUrl, wmsLayers, mapOptions);
 
         this.#mapContainerId = mapContainerId;
         this.#geoserverBaseUrl = geoserverBaseUrl;
         this.#wmsLayers = wmsLayers;
         this.#mapOptions = { ...this.#mapOptionsDefault, ...mapOptions };
+        if (mapOptions.header) this.#mapOptions.header = { ...this.#headerOptionsDefault, ...mapOptions.header };
+    }
+
+    #validateArgs(mapContainerId, geoserverBaseUrl, wmsLayers, mapOptions) {
+        if (!mapContainerId || !geoserverBaseUrl || !wmsLayers || !wmsLayers.length) throw new Error('Insufficient arguments');
+        if (mapOptions.header && (!mapOptions.header.logoImageUrl || !mapOptions.header.title)) throw new Error('Insufficient arguments for header');
+        if (mapOptions.header && mapOptions.header.backgroundColor && !mapOptions.header.backgroundColor.toLowerCase().includes('rgb(')) throw new Error('Header background color must be in RGB format');
+        if (mapOptions.zoomControl && mapOptions.zoomControlPosition && !['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'].includes(mapOptions.zoomControlPosition)) throw new Error('Wrong zoom control position');
+        if (mapOptions.initialViewType && !['CENTER_POINT', 'FITS_CONTENT'].includes(mapOptions.initialViewType)) throw new Error('Wrong initial view type');
     }
 
     #addWmsLayers() {
@@ -109,7 +130,7 @@ class MapWidget {
 
         const bboxArrs = geoserverLayers
             .filter(x => this.#getNamesOfActiveLayers().length ? this.#getNamesOfActiveLayers().includes(x.Name) : this.#getNamesOfLayers().includes(x.Name))
-            .map(x => x.BoundingBox.some(y => y.crs === 'EPSG:4326') ? x.BoundingBox.find(y => y.crs === 'EPSG:4326').extent : [200, 200, -200, -200]);
+            .map(x => x.BoundingBox.some(y => ['EPSG:4326', 'CRS:84'].includes(y.crs)) ? x.BoundingBox.find(y => ['EPSG:4326', 'CRS:84'].includes(y.crs)).extent : [200, 200, -200, -200]);
 
         const bbox = bboxArrs.reduce((s, c) => {
             return [
@@ -120,7 +141,13 @@ class MapWidget {
             ];
         }, initialBBoxCoords);
 
-        this.#map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
+        // this.#map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
+        this.#map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
+    }
+
+    #changeDisplayOfControls (type) {
+        if (!['show', 'hide'].includes(type)) return;
+        document.querySelector(`#${this.#mapContainerId} .leaflet-control-container`).style.display = type === 'show' ? 'block' : 'none';
     }
 
     async #showInfoPopup(e) {
@@ -131,19 +158,23 @@ class MapWidget {
         const width = this.#map._size.x;
         const height = this.#map._size.y;
         const queryLayersString = this.#getNamesOfActiveLayers().join(',');
-        const x = e.originalEvent.x;
-        const y = e.originalEvent.y;
+        const x = Math.round(e.originalEvent.x - e.originalEvent.target.getBoundingClientRect().left);
+        const y = Math.round(e.originalEvent.y - e.originalEvent.target.getBoundingClientRect().top);
 
         const data = await this.#getFeatureInfo(bboxString, width, height, queryLayersString, x, y);
         this.#popupFeatures = data.features;
 
-        console.log(this.#popupFeatures);
-        
         if (!this.#popupFeatures.length) return;
+
+        this.#changeDisplayOfControls('hide');
 
         this.#popup = L.popup({ minWidth: 200, maxWidth: 0.7 * this.#map._size.x, maxHeight: 0.7 * this.#map._size.y })
             .setLatLng([lat, lon])
             .openOn(this.#map);
+
+        this.#popup.on('remove', () => {
+            this.#changeDisplayOfControls('show');
+        })
 
         this.#currentPopupPage = 0;
         this.#setPopupContent(this.#currentPopupPage);
@@ -222,12 +253,99 @@ class MapWidget {
         }
     }
 
-    init() {
-        this.#map = L.map(this.#mapContainerId, { zoomControl: this.#mapOptions.zoomControl });
+    #rgbToRgba(rgb, alpha) {
+        return rgb.replace('rgb', 'rgba').replace(')', `,${alpha})`);
+    }
+
+    #manipulateDOM() {
+        const elementContainer = document.getElementById(this.#mapContainerId);
+        elementContainer.style.display = 'flex';
+        elementContainer.style.flexDirection = 'column';
+
+        const idSuffix = Date.now();
+
+        const elementHeader = this.#mapOptions.header ? document.createElement('div') : null;
+        if (elementHeader) {
+            elementHeader.setAttribute('class', `${this.#mapContainerId}__header_${idSuffix}`);
+            elementHeader.style.cssText = `
+                height: ${this.#mapOptions.header.height}px;
+                background: ${this.#mapOptions.header.backgroundColor};
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+            `;
+
+            document.getElementById(this.#mapContainerId).appendChild(elementHeader);
+
+            elementHeader.innerHTML = `
+                <div style="
+                    height: ${this.#mapOptions.header.logoOverflow ? `${this.#mapOptions.header.logoImageHeight}px` : 'calc(100% - 16px)'};
+                    background: ${this.#rgbToRgba(this.#mapOptions.header.backgroundColor, 0.5)};
+                    z-index: 2000;
+                    padding: ${this.#mapOptions.header.logoOverflow ? '8px' : '0'};
+                    border-radius: 5px;
+                    margin-left: 10px;"
+                >
+                    <img style="height: 100%; width: 100%;" src="${this.#mapOptions.header.logoImageUrl}">
+                </div>
+                <h3 style='
+                    font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
+                    color: ${this.#mapOptions.header.textColor};
+                    margin-right: 10px; 
+                    display: flex; 
+                    align-items: center'
+                >${this.#mapOptions.header.title}</h3>
+            `;
+        }
+
+        const elementMap = document.createElement('div');
+        const elementMapId = `${this.#mapContainerId}__map_${idSuffix}`;
+        elementMap.setAttribute('id', elementMapId);
+        elementMap.style.cssText = `
+            width: 100%;
+            flex-grow: 1;
+        `;
+        document.getElementById(this.#mapContainerId).appendChild(elementMap);
+
+        return {
+            getElementMapId: () => {
+                return elementMapId;
+            }
+        }
+    }
+
+    #fixLeafletWhiteLinesBetweenTilesBug() {
+        const originalInitTile = L.GridLayer.prototype._initTile
+        L.GridLayer.include({
+            _initTile: function (tile) {
+                originalInitTile.call(this, tile);
+    
+                var tileSize = this.getTileSize();
+    
+                tile.style.width = tileSize.x + 1 + 'px';
+                tile.style.height = tileSize.y + 1 + 'px';
+            }
+        });
+    }
+
+    #createMap(elementMapId) {
+        this.#fixLeafletWhiteLinesBetweenTilesBug();
+
+        this.#map = L.map(elementMapId, { zoomControl: false });
+
+        if (this.#mapOptions.zoomControl) {
+            const positions = { TOP_LEFT: 'topleft', TOP_RIGHT: 'topright', BOTTOM_LEFT: 'bottomleft', BOTTOM_RIGHT: 'bottomright' };
+            L.control.zoom({
+                position: positions[this.#mapOptions.zoomControlPosition],
+            }).addTo(this.#map);
+        }
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(this.#map);
+
+        this.#map.attributionControl.setPrefix('');
 
         this.#addWmsLayers();
 
@@ -239,12 +357,16 @@ class MapWidget {
                 this.#zoomToWmsContent();
                 break;
             default:
-                throw new Error('Invalid value for initialViewType');
         }
 
         this.#map.on('click', (e) => {
             this.#showInfoPopup(e);
-        })
+        });
+    }
+
+    init() {
+        const elementMapId = this.#manipulateDOM().getElementMapId();
+        this.#createMap(elementMapId);
     }
 
 }
