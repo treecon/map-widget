@@ -52,7 +52,7 @@ Type: `{ layers: string, label: string, openByDefault?: boolean }[]`
 
 ### Options
 
-<b>zoomControl</b>: `boolean` - whether to show a zoom control or not (default: `false`)
+<b>zoomControl</b>: `boolean` - whether to show a zoom control or not (default: `true`)
 
 <b>zoomControlPosition</b>: `string` - Required only if `zoomControl` is `true`. Accepts values: `TOP_LEFT`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_RIGHT`
 
