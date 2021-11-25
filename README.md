@@ -70,6 +70,8 @@ Type: `{ layers: string, label: string, openByDefault?: boolean }[]`
 
 <b>layerAliases</b>: `{ name: string, alias: string }[]` - aliases for layers (shown in information popup). 
 
+<b>propertyAliases</b>: `{ name: string, alias: string }[]` - aliases for property names (shown in information popup).
+
 <b>excludeProperties</b>: `string[]` - An array of properties to be excluded from feature information
 
 <b>includeOnlyProperties</b>: `{ property: string, label: string }[]` - An array of properties (and their labels) to be exclusively included in feature information
