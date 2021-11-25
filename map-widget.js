@@ -1,7 +1,7 @@
 class MapWidget {
 
     #mapOptionsDefault = {
-        zoomControl: false,
+        zoomControl: true,
         zoomControlPosition: 'TOP_LEFT', // ignored if zoomControl: false, accepted values: 'TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'
         initialViewType: 'FITS_CONTENT', // accepted values: 'CENTER_POINT', 'FITS_CONTENT',
         initialViewPoint: {
@@ -52,11 +52,13 @@ class MapWidget {
         this.#geoserverBaseUrl = geoserverBaseUrl;
         this.#wmsLayers = wmsLayers;
         this.#mapOptions = { ...this.#mapOptionsDefault, ...mapOptions };
-        if (mapOptions.header) this.#mapOptions.header = { ...this.#headerOptionsDefault, ...mapOptions.header };
+        if (mapOptions && mapOptions.header) this.#mapOptions.header = { ...this.#headerOptionsDefault, ...mapOptions.header };
     }
 
     #validateArgs(mapContainerId, geoserverBaseUrl, wmsLayers, mapOptions) {
         if (!mapContainerId || !geoserverBaseUrl || !wmsLayers || !wmsLayers.length) throw new Error('Insufficient arguments');
+
+        if (!mapOptions) return;
         if (mapOptions.header && (!mapOptions.header.logoImageUrl || !mapOptions.header.title)) throw new Error('Insufficient arguments for header');
         if (mapOptions.header && mapOptions.header.backgroundColor && !mapOptions.header.backgroundColor.toLowerCase().includes('rgb(')) throw new Error('Header background color must be in RGB format');
         if (mapOptions.zoomControl && mapOptions.zoomControlPosition && !['TOP_LEFT', 'TOP_RIGHT', 'BOTTOM_LEFT', 'BOTTOM_RIGHT'].includes(mapOptions.zoomControlPosition)) throw new Error('Wrong zoom control position');
@@ -222,14 +224,19 @@ class MapWidget {
                     : feature.id.split('.')[0]}
             </h3>
             <hr>
-            <div style="display: grid; grid-template-columns: min-content 1fr; column-gap: 15px; overflow-wrap: anywhere;">
+            <div style="display: grid; grid-template-columns: min-content 1fr; column-gap: 15px; row-gap: 5px; padding-top: 5px; overflow-wrap: anywhere;">
                 ${
                     Object.keys(feature.properties)
                         .filter(x => this.#mapOptions.excludeProperties ? !this.#mapOptions.excludeProperties.includes(x) : x)
                         .filter(x => this.#mapOptions.includeOnlyProperties ? this.#mapOptions.includeOnlyProperties.map(y => y.property).includes(x) : x)
                         .map((x, i) => `
-                            <div style="overflow-wrap: initial;">
-                                ${this.#mapOptions.includeOnlyProperties ? this.#mapOptions.includeOnlyProperties.find(y => y.property === x).label : x}
+                            <div style="overflow-wrap: initial; font-weight: bold;">
+                                ${this.#mapOptions.includeOnlyProperties
+                                    ? this.#mapOptions.includeOnlyProperties.find(y => y.property === x).label
+                                    : this.#mapOptions.propertyAliases && this.#mapOptions.propertyAliases.some(y => y.name === x)
+                                        ? this.#mapOptions.propertyAliases.find(y => y.name === x).alias
+                                        : x
+                                }
                             </div>
                             <div style="display: flex; flex-direction: column; justify-content: end;">
                                 ${this.#getValueFormat(Object.values(feature.properties)[i])}
@@ -292,6 +299,7 @@ class MapWidget {
                 <h3 style='
                     font-family: "Helvetica Neue", Arial, Helvetica, sans-serif;
                     color: ${this.#mapOptions.header.textColor};
+                    text-align: right;
                     margin-right: 10px; 
                     display: flex; 
                     align-items: center'
