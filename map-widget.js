@@ -144,6 +144,7 @@ class MapWidget {
         }, initialBBoxCoords);
 
         // this.#map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
+        console.log('ready to fit bounds');
         this.#map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
     }
 
@@ -292,7 +293,9 @@ class MapWidget {
                     z-index: 2000;
                     padding: ${this.#mapOptions.header.logoOverflow ? '8px' : '0'};
                     border-radius: 5px;
-                    margin-left: 10px;"
+                    margin: 0 20px 0 10px;
+                    margin-left: 10px;
+                    flex-shrink: 0;"
                 >
                     <img style="height: 100%; width: 100%;" src="${this.#mapOptions.header.logoImageUrl}">
                 </div>
