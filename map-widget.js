@@ -143,8 +143,10 @@ class MapWidget {
             ];
         }, initialBBoxCoords);
 
-        // this.#map.fitBounds([[bbox[0], bbox[1]], [bbox[2], bbox[3]]]);
-        console.log('ready to fit bounds');
+        document.querySelectorAll(`#${this.#mapContainerId} .loader-container`).forEach((e) => {
+            e.remove();
+        })
+
         this.#map.fitBounds([[bbox[1], bbox[0]], [bbox[3], bbox[2]]]);
     }
 
@@ -318,6 +320,14 @@ class MapWidget {
             flex-grow: 1;
         `;
         document.getElementById(this.#mapContainerId).appendChild(elementMap);
+
+        if (this.#mapOptions.initialViewType === 'FITS_CONTENT') {
+            elementMap.innerHTML = `
+                <div class="loader-container" style="display: flex; align-items: center; justify-content: center; height: 100%; width: 100%;">
+                    <svg style="height: 30%; width: 30%; max-height: 100px; max-width: 100px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" xml:space="preserve"><circle fill="none" stroke="#121212" stroke-width="4" cx="50" cy="50" r="44" style="opacity:.5"/><circle fill="#ddd" stroke="#121212" stroke-width="3" cx="8" cy="54" r="6"><animateTransform attributeName="transform" dur="2s" type="rotate" from="0 50 48" to="360 50 52" repeatCount="indefinite"/></circle></svg>
+                </div>
+            `;
+        }
 
         return {
             getElementMapId: () => {
